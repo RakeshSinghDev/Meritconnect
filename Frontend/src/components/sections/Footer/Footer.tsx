@@ -1,7 +1,6 @@
 import {
     FaGithub,
     FaLinkedin,
-    FaXTwitter,
 } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import { Link as ScrollLink } from "react-scroll";
@@ -40,9 +39,9 @@ export default function Footer() {
                         <div className="mt-8 flex gap-4">
 
                             <a
-                                href="https://github.com"
+                                href="https://github.com/RakeshSinghDev"
                                 target="_blank"
-                                rel="noreferrer"
+                                rel="noopener noreferrer"
                                 aria-label="MeritConnect on GitHub"
                                 className="rounded-xl border border-gray-200 p-3 transition hover:bg-gray-100"
                             >
@@ -50,23 +49,13 @@ export default function Footer() {
                             </a>
 
                             <a
-                                href="https://www.linkedin.com"
+                                href="https://www.linkedin.com/in/rakesh-kumar-singh-27a70324a"
                                 target="_blank"
-                                rel="noreferrer"
+                                rel="noopener noreferrer"
                                 aria-label="MeritConnect on LinkedIn"
                                 className="rounded-xl border border-gray-200 p-3 transition hover:bg-gray-100"
                             >
                                 <FaLinkedin size={20} />
-                            </a>
-
-                            <a
-                                href="https://x.com"
-                                target="_blank"
-                                rel="noreferrer"
-                                aria-label="MeritConnect on X"
-                                className="rounded-xl border border-gray-200 p-3 transition hover:bg-gray-100"
-                            >
-                                <FaXTwitter size={20} />
                             </a>
 
                         </div>
@@ -107,8 +96,8 @@ export default function Footer() {
 
                         <div className="mt-5 space-y-4">
                             <ScrollLink to="hero" smooth offset={-80} duration={500} className="block cursor-pointer text-gray-600 transition hover:text-black">About</ScrollLink>
-                            <a href="mailto:hello@meritconnect.ai" className="block text-gray-600 transition hover:text-black">Contact</a>
-                            <a href="mailto:careers@meritconnect.ai?subject=Careers%20at%20MeritConnect" className="block text-gray-600 transition hover:text-black">Careers</a>
+                            <a href="mailto:rssingh0246@gmail.com" className="block text-gray-600 transition hover:text-black">Contact</a>
+                            <a href="mailto:rssingh0246@gmail.com?subject=Careers%20at%20MeritConnect" className="block text-gray-600 transition hover:text-black">Careers</a>
                         </div>
 
                     </div>
@@ -123,9 +112,8 @@ export default function Footer() {
 
                         <div className="mt-5 space-y-4">
                             <ScrollLink to="faq" smooth offset={-80} duration={500} className="block cursor-pointer text-gray-600 transition hover:text-black">FAQ</ScrollLink>
-                            <a href="mailto:hello@meritconnect.ai" className="block text-gray-600 transition hover:text-black">hello@meritconnect.ai</a>
-                            <a href="tel:+10000000000" className="block text-gray-600 transition hover:text-black">+1 (000) 000-0000</a>
-                            {/* TODO: Add Privacy Policy and Terms of Service routes before exposing legal links. */}
+                            <a href="mailto:rssingh0246@gmail.com" className="block text-gray-600 transition hover:text-black">rssingh0246@gmail.com</a>
+                            <a href="tel:+916201218247" className="block text-gray-600 transition hover:text-black">+91 6201218247</a>
                         </div>
 
                     </div>

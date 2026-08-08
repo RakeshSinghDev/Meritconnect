@@ -71,10 +71,11 @@ const ApplicationTable = ({
                                 0;
 
                             const resumeUrl =
-                                application.resume?.url ||
-                                (typeof application.resume === "string" ? application.resume : "") ||
-                                application.candidate?.profile?.resume?.url ||
-                                "";
+                                typeof application.resume === "string"
+                                    ? application.resume
+                                    : application.resume?.url ||
+                                    application.candidate?.profile?.resume?.url ||
+                                    "";
 
                             return (
                                 <tr

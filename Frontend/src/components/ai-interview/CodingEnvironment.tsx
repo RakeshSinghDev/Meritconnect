@@ -9,13 +9,7 @@ import {
     Terminal,
     Maximize2,
     Minimize2,
-    Clock,
     RotateCcw,
-    Check,
-    X,
-    Cpu,
-    HelpCircle,
-    Shield,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -135,23 +129,23 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
     return (
         <div
             ref={containerRef}
-            className={`flex flex-col h-full bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl transition-all ${isFullscreen ? "fixed inset-0 z-50 rounded-none border-none" : ""
+            className={`flex flex-col h-full bg-white border border-[#ECECEC] rounded-[28px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.03)] transition-all ${isFullscreen ? "fixed inset-0 z-50 rounded-none border-none" : ""
                 }`}
         >
             {/* Top IDE Toolbar */}
-            <div className="flex flex-wrap items-center justify-between px-5 py-3 bg-slate-900/90 border-b border-slate-800/90 gap-3 backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-between px-6 py-3.5 bg-white border-b border-[#ECECEC] gap-3 shadow-xs">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                        <FileCode2 className="h-4.5 w-4.5" />
+                    <div className="p-2 rounded-xl bg-[#F6F6F7] border border-[#ECECEC] text-[#111111]">
+                        <FileCode2 className="h-4 w-4" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                        <h3 className="font-semibold text-xs text-[#111111] tracking-tight flex items-center gap-2">
                             {challenge.title || "Interactive Technical Challenge"}
                         </h3>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                            <span>Monaco Editor Workspace</span>
+                        <div className="flex items-center gap-2 text-[11px] text-[#6E6E73]">
+                            <span>Monaco Workspace</span>
                             <span>&bull;</span>
-                            <span className="text-emerald-400 font-mono text-[10px]">
+                            <span className="text-emerald-600 font-mono text-[10px] font-semibold">
                                 {autoSaved ? "Saved" : "Saving..."}
                             </span>
                         </div>
@@ -164,7 +158,7 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                     <select
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        className="bg-slate-950 text-slate-200 text-xs px-3 py-1.5 rounded-xl border border-slate-800 font-mono outline-none focus:border-blue-500 transition"
+                        className="bg-[#F6F6F7] text-[#111111] text-xs px-3 py-1.5 rounded-xl border border-[#ECECEC] font-mono outline-none focus:border-black transition"
                     >
                         <option value="javascript">JavaScript (Node.js)</option>
                         <option value="typescript">TypeScript 5.0</option>
@@ -181,7 +175,7 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                         type="button"
                         onClick={handleReset}
                         aria-label="Reset Code Template"
-                        className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                        className="p-2 rounded-xl bg-[#F6F6F7] border border-[#ECECEC] hover:bg-white text-[#6E6E73] hover:text-[#111111] transition"
                         title="Reset Code Template"
                     >
                         <RotateCcw className="h-4 w-4" />
@@ -192,7 +186,7 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                         type="button"
                         onClick={toggleFullscreen}
                         aria-label={isFullscreen ? "Exit Fullscreen Workspace" : "Fullscreen Workspace"}
-                        className="p-2 rounded-xl bg-slate-950 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+                        className="p-2 rounded-xl bg-[#F6F6F7] border border-[#ECECEC] hover:bg-white text-[#6E6E73] hover:text-[#111111] transition"
                         title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Workspace"}
                     >
                         {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -203,12 +197,12 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                         type="button"
                         onClick={handleRunCode}
                         disabled={isRunning}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition"
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#F6F6F7] hover:bg-white text-[#111111] text-xs font-semibold border border-[#ECECEC] transition shadow-xs"
                     >
                         {isRunning ? (
-                            <Sparkles className="h-3.5 w-3.5 animate-spin text-blue-400" />
+                            <Sparkles className="h-3.5 w-3.5 animate-spin text-black" />
                         ) : (
-                            <Play className="h-3.5 w-3.5 text-emerald-400 fill-emerald-400" />
+                            <Play className="h-3.5 w-3.5 text-emerald-600 fill-emerald-600" />
                         )}
                         <span>Run Tests</span>
                     </button>
@@ -218,121 +212,110 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/20 transition"
+                        className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-black hover:bg-neutral-800 text-white text-xs font-semibold shadow-xs transition"
                     >
                         {submitting ? (
-                            <Sparkles className="h-3.5 w-3.5 animate-spin" />
+                            <Sparkles className="h-3.5 w-3.5 animate-spin text-white" />
                         ) : (
                             <CheckCircle className="h-3.5 w-3.5" />
                         )}
-                        <span>Submit Code</span>
+                        <span>Submit Solution</span>
                     </button>
                 </div>
             </div>
 
-            {/* Split Screen Workspace */}
+            {/* Split Screen Workspace: Left (Problem / Test Output), Right (Monaco Code Editor) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
-
-                {/* LEFT PANE (4 Cols): Problem Statement, Constraints, Public & Hidden Test Cases */}
-                <div className="lg:col-span-4 p-5 border-r border-slate-800 bg-slate-900/40 overflow-y-auto space-y-5 text-xs">
-                    {/* Navigation Sub-Tabs */}
-                    <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                {/* Left Drawer (5 Cols): Specification or Console Test Results */}
+                <div className="lg:col-span-5 border-r border-[#ECECEC] bg-[#F6F6F7] p-5 overflow-y-auto space-y-4">
+                    {/* Navigation Tabs */}
+                    <div className="flex items-center gap-2 p-1 bg-white rounded-xl border border-[#ECECEC]">
                         <button
+                            type="button"
                             onClick={() => setActiveTab("problem")}
-                            className={`px-3 py-1 rounded-lg font-semibold transition ${activeTab === "problem" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-slate-200"
-                                }`}
+                            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition ${
+                                activeTab === "problem"
+                                    ? "bg-[#F6F6F7] text-[#111111] shadow-xs"
+                                    : "text-[#6E6E73] hover:text-[#111111]"
+                            }`}
                         >
                             Problem Statement
                         </button>
                         <button
+                            type="button"
                             onClick={() => setActiveTab("console")}
-                            className={`px-3 py-1 rounded-lg font-semibold transition flex items-center gap-1.5 ${activeTab === "console" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-slate-200"
-                                }`}
+                            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 ${
+                                activeTab === "console"
+                                    ? "bg-[#F6F6F7] text-[#111111] shadow-xs"
+                                    : "text-[#6E6E73] hover:text-[#111111]"
+                            }`}
                         >
                             <Terminal className="h-3.5 w-3.5" />
-                            <span>Console</span>
-                            {testResults && <span className="h-2 w-2 rounded-full bg-emerald-400" />}
+                            <span>Test Console</span>
+                            {testResults && (
+                                <span className={`h-2 w-2 rounded-full ${testResults.passedCount === testResults.totalCount ? "bg-emerald-500" : "bg-rose-500"}`} />
+                            )}
                         </button>
                     </div>
 
                     {activeTab === "problem" ? (
-                        <div className="space-y-4">
-                            <div>
-                                <span className="px-2.5 py-0.5 rounded-full bg-blue-950 border border-blue-800 text-blue-400 text-[10px] font-bold uppercase tracking-wider">
-                                    Algorithm Challenge
-                                </span>
-                                <h4 className="text-sm font-bold text-white mt-2 mb-1">{challenge.title}</h4>
-                                <p className="text-slate-300 leading-relaxed whitespace-pre-line text-xs">
-                                    {challenge.description}
-                                </p>
+                        <div className="space-y-4 text-xs">
+                            <div className="p-4 rounded-2xl bg-white border border-[#ECECEC] space-y-2 shadow-xs">
+                                <h4 className="font-bold text-sm text-[#111111] tracking-tight">{challenge.title}</h4>
+                                <p className="text-[#6E6E73] leading-relaxed whitespace-pre-line text-xs">{challenge.description}</p>
                             </div>
 
-                            {/* Public Sample Test Cases */}
-                            <div className="space-y-3 pt-2">
-                                <div className="flex items-center justify-between font-bold text-[11px] uppercase tracking-wider text-slate-400">
-                                    <span>Public Test Cases</span>
-                                    <span className="text-[10px] text-slate-500 font-normal">2 Public &bull; 2 Hidden</span>
-                                </div>
-
+                            {/* Sample Test Cases */}
+                            <div className="space-y-2">
+                                <h5 className="font-semibold text-xs text-[#111111] tracking-tight">Sample Test Cases</h5>
                                 {(challenge.testCases || []).map((tc, idx) => (
-                                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 font-mono text-xs space-y-1.5">
-                                        <div className="text-slate-400">
-                                            Input: <span className="text-slate-200 font-semibold">{tc.input}</span>
-                                        </div>
-                                        <div className="text-slate-400">
-                                            Expected Output: <span className="text-emerald-400 font-semibold">{tc.expectedOutput}</span>
-                                        </div>
+                                    <div key={idx} className="p-3.5 rounded-2xl bg-white border border-[#ECECEC] space-y-1 font-mono text-[11px] text-[#111111]">
+                                        <p className="text-[#6E6E73] text-[10px]">Case {idx + 1}:</p>
+                                        <p><strong className="text-[#6E6E73]">Input:</strong> {tc.input}</p>
+                                        <p><strong className="text-[#6E6E73]">Expected:</strong> {tc.expectedOutput}</p>
                                     </div>
                                 ))}
-
-                                {/* Hidden Test Cases Notice */}
-                                <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/60 text-slate-400 text-[11px] flex items-center gap-2">
-                                    <Shield className="h-4 w-4 text-purple-400 shrink-0" />
-                                    <span>Hidden test cases (boundary values, large arrays) will be evaluated upon solution submission.</span>
-                                </div>
                             </div>
                         </div>
                     ) : (
-                        /* Console Execution Output Drawer */
-                        <div className="space-y-4 font-mono text-xs">
-                            <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
-                                <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                                    <Terminal className="h-3.5 w-3.5 text-blue-400" /> Execution Console
-                                </span>
-                                {testResults && <span className="text-[10px] text-emerald-400 font-bold">Exit Code 0</span>}
-                            </div>
-
-                            {testResults ? (
-                                <div className="space-y-3">
-                                    <pre className="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-emerald-400 text-xs whitespace-pre-wrap leading-relaxed">
-                                        {testResults.output}
-                                    </pre>
-
-                                    <div className="space-y-2">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Test Case Results</p>
-                                        {testResults.details.map((res, i) => (
-                                            <div key={i} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-[11px]">
-                                                <span>Case {i + 1}: {res.input}</span>
-                                                <span className="text-emerald-400 font-bold flex items-center gap-1">
-                                                    <Check className="h-3.5 w-3.5" /> Passed
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
+                        /* Console Results Tab */
+                        <div className="space-y-4 text-xs font-mono">
+                            {!testResults ? (
+                                <div className="text-center py-12 text-[#6E6E73] text-xs">
+                                    Click "Run Tests" above to execute your solution against test cases.
                                 </div>
                             ) : (
-                                <p className="text-slate-500 py-8 text-center">Click "Run Tests" to execute your solution against sample inputs.</p>
+                                <div className="space-y-3">
+                                    <div className={`p-4 rounded-2xl border ${testResults.passedCount === testResults.totalCount ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                                        <p className="font-bold text-xs">{testResults.output}</p>
+                                        <p className="text-[11px] mt-1 opacity-80">
+                                            Passed {testResults.passedCount} of {testResults.totalCount} test cases.
+                                        </p>
+                                    </div>
+
+                                    {testResults.details.map((res, i) => (
+                                        <div key={i} className={`p-3 rounded-xl border text-[11px] ${res.passed ? "bg-white border-emerald-200 text-[#111111]" : "bg-white border-rose-200 text-[#111111]"}`}>
+                                            <div className="flex items-center justify-between font-bold mb-1">
+                                                <span>Test Case {i + 1}</span>
+                                                <span className={res.passed ? "text-emerald-600" : "text-rose-600"}>{res.passed ? "PASS" : "FAIL"}</span>
+                                            </div>
+                                            <p><span className="text-[#6E6E73]">Input:</span> {res.input}</p>
+                                            <p><span className="text-[#6E6E73]">Expected:</span> {res.expected}</p>
+                                            <p><span className="text-[#6E6E73]">Actual:</span> {res.actual}</p>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}
                 </div>
 
-                {/* RIGHT PANE (8 Cols): Real Monaco Code Editor */}
-                <div className="lg:col-span-8 bg-slate-950 flex flex-col overflow-hidden relative">
+                {/* Right Column (7 Cols): Monaco Code Editor */}
+                <div className="lg:col-span-7 h-full flex flex-col bg-white">
                     <Editor
                         height="100%"
-                        language={language}
-                        theme="vs-dark"
+                        language={language === "cpp" ? "cpp" : language}
+                        theme="vs"
                         value={code}
                         onChange={(value) => setCode(value || "")}
                         options={{
@@ -341,10 +324,10 @@ export const CodingEnvironment: React.FC<CodingEnvironmentProps> = ({
                             scrollBeyondLastLine: false,
                             automaticLayout: true,
                             tabSize: 2,
+                            wordWrap: "on",
+                            lineNumbers: "on",
+                            renderLineHighlight: "all",
                             padding: { top: 16, bottom: 16 },
-                            smoothScrolling: true,
-                            cursorBlinking: "smooth",
-                            fontFamily: "Fira Code, monospace",
                         }}
                     />
                 </div>

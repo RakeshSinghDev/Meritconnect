@@ -9,10 +9,11 @@ import Security from "../components/sections/Security";
 import FAQ from "../components/sections/FAQ";
 import CTA from "../components/sections/CTA";
 import Footer from "../components/sections/Footer";
+import SmoothScroll from "../components/common/SmoothScroll";
 
 export default function HomePage() {
     return (
-        <>
+        <SmoothScroll>
             <Navbar />
             <Hero />
             <Companies />
@@ -24,6 +25,6 @@ export default function HomePage() {
             <FAQ />
             <CTA />
             <Footer />
-        </>
+        </SmoothScroll>
     );
 }

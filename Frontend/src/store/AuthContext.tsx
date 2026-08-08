@@ -43,66 +43,48 @@ export const AuthProvider = ({
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-
         const loadUser = async () => {
+            const hasAuthSession =
+                document.cookie.includes("accessToken") ||
+                localStorage.getItem("isLoggedIn") === "true";
+
+            if (!hasAuthSession) {
+                setUser(null);
+                setLoading(false);
+                return;
+            }
 
             try {
-
                 const response = await me();
-
-                // Backend returns:
-                // {
-                //   success,
-                //   statusCode,
-                //   message,
-                //   data: user
-                // }
-
                 setUser(response.data);
 
                 if (!socket.connected) {
                     socket.connect();
                 }
                 socket.emit("join", response.data._id);
-
             } catch {
-
+                localStorage.removeItem("isLoggedIn");
                 setUser(null);
-
             } finally {
-
                 setLoading(false);
-
             }
-
         };
 
         loadUser();
-
     }, []);
 
     const loginUser = async (
         email: string,
         password: string
     ): Promise<User> => {
-
         const response = await login({
             email,
             password,
         });
 
-        // Backend returns:
-        // {
-        //   success,
-        //   statusCode,
-        //   message,
-        //   data: {
-        //      user
-        //   }
-        // }
-
         const loggedInUser = response.data.user;
 
+        localStorage.setItem("isLoggedIn", "true");
         setUser(loggedInUser);
         if (!socket.connected) {
             socket.connect();
@@ -110,17 +92,18 @@ export const AuthProvider = ({
         socket.emit("join", loggedInUser._id);
 
         return loggedInUser;
-
     };
 
     const logoutUser = async () => {
-
-        await logout();
-
-        socket.disconnect();
-
-        setUser(null);
-
+        try {
+            await logout();
+        } catch {
+            // Ignore logout API failure
+        } finally {
+            localStorage.removeItem("isLoggedIn");
+            socket.disconnect();
+            setUser(null);
+        }
     };
 
     return (

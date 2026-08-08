@@ -56,13 +56,16 @@ const CandidateSidebar = () => {
     return (
         <aside className="sticky top-0 flex h-screen w-72 flex-col border-r border-[#ECECEC] bg-white select-none">
             {/* Logo */}
-            <div className="border-b border-[#ECECEC] px-6 py-6">
-                <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-                    Merit<span className="text-neutral-400">Connect</span>
-                </h1>
-                <p className="mt-0.5 text-xs text-neutral-400 font-medium">
-                    Candidate Workspace
-                </p>
+            <div className="border-b border-[#ECECEC] px-6 py-5 flex items-center gap-3">
+                <img src="/logo.svg" alt="MeritConnect Logo" className="h-8 w-8 rounded-lg" />
+                <div>
+                    <h1 className="text-base font-bold tracking-tight text-neutral-900 leading-none">
+                        MeritConnect
+                    </h1>
+                    <p className="mt-0.5 text-[10px] text-neutral-400 font-medium">
+                        Candidate Workspace
+                    </p>
+                </div>
             </div>
 
             {/* Navigation */}

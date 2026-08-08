@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import Container from "../../common/Container";
 import WorkflowCard from "./WorkflowCard";
 
@@ -48,11 +49,20 @@ export default function Workflow() {
                     </p>
                 </div>
 
-                <div className="relative mt-20 grid gap-4 lg:grid-cols-5 lg:gap-5">
+                <motion.div
+                    initial="hidden"
+                    whileInView="show"
+                    viewport={{ once: true, amount: 0.2 }}
+                    variants={{
+                        hidden: {},
+                        show: { transition: { staggerChildren: 0.1 } },
+                    }}
+                    className="relative mt-20 grid gap-4 lg:grid-cols-5 lg:gap-5"
+                >
                     {steps.map((item) => (
                         <WorkflowCard key={item.step} {...item} />
                     ))}
-                </div>
+                </motion.div>
             </Container>
         </section>
     );

@@ -18,24 +18,28 @@ api.interceptors.response.use(
             | (typeof error.config & { _retry?: boolean })
             | undefined;
 
+        const isAuthEndpoint =
+            originalRequest?.url?.includes("/auth/me") ||
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/register") ||
+            originalRequest?.url?.includes("/auth/refresh-token");
+
         if (
             error.response?.status === 401 &&
             originalRequest &&
             !originalRequest._retry &&
-            !originalRequest.url?.includes("/auth/refresh-token")
+            !isAuthEndpoint
         ) {
             originalRequest._retry = true;
             try {
                 refreshPromise ??= api.post("/auth/refresh-token").then(() => undefined);
                 await refreshPromise;
                 return api(originalRequest);
-            } catch {
-                window.location.href = "/login";
+            } catch (refreshErr) {
+                return Promise.reject(refreshErr);
             } finally {
                 refreshPromise = null;
             }
-        } else if (error.response?.status === 401) {
-            window.location.href = "/login";
         }
 
         return Promise.reject(error);

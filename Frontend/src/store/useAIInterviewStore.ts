@@ -100,20 +100,30 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
     },
 
     startSession: async (id: string) => {
+        console.log("[STEP 3: Store startSession called]", id);
         set({ status: "loading", error: null });
         try {
+            console.log("[STEP 4: Invoking startAIInterview API]");
             const res = await startAIInterview(id);
+            console.log("[STEP 9: API Response received in store]", res);
+
+            const firstQ = res.agentData?.firstQuestion;
+            const updatedQuestions = (res.session?.questions && res.session.questions.length > 0)
+                ? res.session.questions
+                : (firstQ ? [{ index: 0, question: firstQ.question, type: firstQ.type, difficulty: firstQ.difficulty, status: "Pending" }] : []);
+
             set({
                 session: res.session,
                 status: "active",
-                questions: res.session.questions || [],
-                transcript: res.agentData.transcript || res.session.transcript || [],
+                questions: updatedQuestions as any,
+                transcript: res.agentData?.transcript || res.session?.transcript || [],
                 avatarState: "speaking",
-                currentSpeechText: res.agentData.greeting + " " + (res.agentData.firstQuestion?.question || ""),
+                currentSpeechText: `${res.agentData?.greeting || ""} ${firstQ?.question || ""}`.trim(),
                 isInterviewerSpeaking: true,
                 currentQuestionIndex: 0,
             });
         } catch (err: any) {
+            console.error("[STEP 3 Error in startSession]:", err);
             set({ status: "error", error: err.response?.data?.message || "Failed to start interview" });
         }
     },

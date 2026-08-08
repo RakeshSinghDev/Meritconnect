@@ -52,13 +52,13 @@ const Sidebar = () => {
     return (
         <aside className="sticky top-0 flex h-screen w-64 flex-col border-r border-[#ECECEC]/60 bg-white select-none shadow-[2px_0_12px_rgba(0,0,0,0.02)]">
             {/* Logo */}
-            <div className="border-b border-[#ECECEC]/60 px-6 py-5 flex items-center justify-between">
+            <div className="border-b border-[#ECECEC]/60 px-6 py-5 flex items-center gap-3">
+                <img src="/logo.svg" alt="MeritConnect Logo" className="h-8 w-8 rounded-lg" />
                 <div>
-                    <h1 className="text-lg font-semibold tracking-tight text-neutral-900 flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
-                        Merit<span className="text-neutral-400 font-normal">Connect</span>
+                    <h1 className="text-base font-bold tracking-tight text-neutral-900 leading-none">
+                        MeritConnect
                     </h1>
-                    <p className="mt-0.5 text-[11px] text-neutral-400 font-medium">
+                    <p className="mt-0.5 text-[10px] text-neutral-400 font-medium">
                         Recruiter Workspace
                     </p>
                 </div>

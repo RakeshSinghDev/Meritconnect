@@ -33,7 +33,7 @@ const Login = () => {
         <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-[1560px] overflow-hidden rounded-[28px] border border-neutral-200 bg-white lg:grid-cols-[1.1fr_.9fr] sm:min-h-[calc(100vh-2.5rem)]">
             <aside className="relative hidden overflow-hidden bg-neutral-950 p-10 text-white lg:flex lg:flex-col xl:p-14">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,.12),transparent_30%)]" />
-                <Link to="/" className="relative inline-flex w-fit items-center gap-2 text-lg font-semibold"><span className="flex size-8 items-center justify-center rounded-lg bg-white text-sm text-neutral-950">M</span> MeritConnect</Link>
+                <Link to="/" className="relative inline-flex w-fit items-center gap-3 text-lg font-bold tracking-tight"><img src="/logo.svg" alt="MeritConnect" className="h-8 w-8 rounded-lg shadow-xs" /> MeritConnect</Link>
                 <div className="relative my-auto max-w-xl pt-20">
                     <p className="text-sm font-medium text-neutral-400">RECRUITMENT INTELLIGENCE</p>
                     <h1 className="mt-5 text-5xl font-semibold tracking-[-.055em] xl:text-6xl">Make every hire a more confident decision.</h1>

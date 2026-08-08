@@ -9,7 +9,7 @@ interface InterviewerAvatarProps {
     className?: string;
 }
 
-export const InterviewerAvatar: React.FC<InterviewerAvatarProps> = ({
+export const InterviewerAvatar = React.memo<InterviewerAvatarProps>(({
     avatarState,
     isSpeaking,
     speechText = "",
@@ -60,14 +60,19 @@ export const InterviewerAvatar: React.FC<InterviewerAvatarProps> = ({
     }, [avatarState]);
 
     return (
-        <div className={`relative flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-zinc-950 shadow-2xl border border-slate-700/50 ${className}`}>
-            {/* Ambient Office Background Blur */}
-            <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900 via-slate-900 to-transparent" />
+        <div className={`relative flex items-center justify-center overflow-hidden rounded-[28px] bg-white border border-[#ECECEC] shadow-[0_4px_24px_rgba(0,0,0,0.03)] ${className}`}>
+            {/* Apple Siri-Style Animated Background Pulse when speaking */}
+            {isSpeaking && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <motion.div
+                        className="w-72 h-72 rounded-full bg-slate-100/80 blur-2xl"
+                        animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    />
+                </div>
+            )}
 
-            {/* Subtle grid accent for corporate executive background */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:4rem_4rem]" />
-
-            {/* Main Avatar Graphic - Modern Senior Engineering Manager (Alex Vance) */}
+            {/* Main Avatar Graphic - Alex Vance (Senior Engineering Manager) */}
             <motion.div
                 className="relative z-10 flex flex-col items-center justify-end w-full h-full pt-6"
                 animate={{
@@ -80,34 +85,34 @@ export const InterviewerAvatar: React.FC<InterviewerAvatarProps> = ({
                     ease: "easeInOut",
                 }}
             >
-                {/* Status Indicator Badge */}
-                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-md border border-slate-700/60 shadow-lg text-xs font-medium text-slate-200">
+                {/* Apple HIG Status Badge */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F6F6F7] border border-[#ECECEC] text-xs font-semibold text-[#111111]">
                     <span
                         className={`h-2 w-2 rounded-full ${
                             isSpeaking
-                                ? "bg-emerald-400 animate-ping"
+                                ? "bg-black animate-ping"
                                 : avatarState === "thinking"
-                                ? "bg-amber-400 animate-pulse"
-                                : "bg-blue-400"
+                                ? "bg-amber-500 animate-pulse"
+                                : "bg-emerald-500"
                         }`}
                     />
                     {isSpeaking
                         ? "Speaking..."
                         : avatarState === "thinking"
-                        ? "Evaluating answer..."
+                        ? "Evaluating response..."
                         : "Listening attentively"}
                 </div>
 
                 {/* Avatar SVG Composition */}
-                <svg viewBox="0 0 400 480" className="w-full h-full max-h-[440px] drop-shadow-2xl">
+                <svg viewBox="0 0 400 480" className="w-full h-full max-h-[440px] drop-shadow-sm">
                     <defs>
                         <linearGradient id="suitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#1e293b" />
                             <stop offset="100%" stopColor="#0f172a" />
                         </linearGradient>
                         <linearGradient id="shirtGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#f8fafc" />
-                            <stop offset="100%" stopColor="#e2e8f0" />
+                            <stop offset="0%" stopColor="#ffffff" />
+                            <stop offset="100%" stopColor="#f1f5f9" />
                         </linearGradient>
                         <linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#f3d0b7" />
@@ -199,13 +204,13 @@ export const InterviewerAvatar: React.FC<InterviewerAvatarProps> = ({
                 </svg>
             </motion.div>
 
-            {/* Subtitle / Closed Caption overlay inside avatar panel */}
+            {/* Subtitle / Closed Caption overlay - Apple HIG Pill */}
             {speechText && isSpeaking && (
                 <div className="absolute bottom-4 left-6 right-6 z-20">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="px-4 py-2.5 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 shadow-2xl text-center text-sm font-medium text-slate-100 leading-relaxed"
+                        className="px-5 py-3 rounded-2xl bg-white/95 backdrop-blur-md border border-[#ECECEC] shadow-[0_8px_30px_rgba(0,0,0,0.06)] text-center text-xs font-medium text-[#111111] leading-relaxed"
                     >
                         "{speechText}"
                     </motion.div>
@@ -213,4 +218,4 @@ export const InterviewerAvatar: React.FC<InterviewerAvatarProps> = ({
             )}
         </div>
     );
-};
+});
