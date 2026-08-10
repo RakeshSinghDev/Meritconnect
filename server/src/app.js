@@ -73,7 +73,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 /* ===========================
    2. Security & Utility Middleware
