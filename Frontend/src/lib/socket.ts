@@ -1,10 +1,13 @@
 import { io } from "socket.io-client";
 
 const getSocketBaseUrl = () => {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
+    const raw =
+        import.meta.env.VITE_API_URL ||
+        import.meta.env.VITE_API_BASE_URL ||
+        "http://localhost:5000";
     try {
-        const url = new URL(apiBase);
-        return url.origin; // e.g. "http://localhost:5000"
+        const url = new URL(raw);
+        return url.origin;
     } catch {
         return "http://localhost:5000";
     }

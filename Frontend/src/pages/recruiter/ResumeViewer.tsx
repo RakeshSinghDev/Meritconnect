@@ -72,8 +72,7 @@ export const ResumeViewerPage: React.FC = () => {
     const rawResumeUrl = data.resumeUrl || "";
     const isDocx = rawResumeUrl.toLowerCase().endsWith(".docx") || rawResumeUrl.toLowerCase().endsWith(".doc");
 
-    // Construct backend server URL to avoid Vite 5173 404 routing
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1").replace(/\/+$/, "");
+    const apiBase = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1").replace(/\/+$/, "");
     const backendServerOrigin = apiBase.replace(/\/api\/v1\/?$/, "");
 
     // 1. Direct external/local URL resolution
