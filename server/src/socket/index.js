@@ -3,9 +3,29 @@ let io;
 const initializeSocket = (server) => {
     const { Server } = require("socket.io");
 
+    const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://meritconnects.netlify.app",
+    ];
+
+    if (process.env.CLIENT_URL) {
+        const envOrigin = process.env.CLIENT_URL.trim().replace(/\/+$/, "");
+        if (envOrigin && !allowedOrigins.includes(envOrigin)) {
+            allowedOrigins.push(envOrigin);
+        }
+    }
+
     io = new Server(server, {
         cors: {
-            origin: process.env.CLIENT_URL,
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                const cleanOrigin = origin.trim().replace(/\/+$/, "");
+                if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes(origin)) {
+                    return callback(null, true);
+                }
+                return callback(new Error("Not allowed by Socket CORS"));
+            },
             credentials: true,
         },
     });

@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 
 // Third-party packages
@@ -29,12 +30,53 @@ const userRoutes = require("./routes/user.routes");
 // Middleware
 const errorHandler = require("./middleware/errorHandler");
 
-const path = require("path");
-
 const app = express();
 
 /* ===========================
-   Security Middleware
+   1. CORS Middleware (Must be FIRST)
+=========================== */
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "https://meritconnects.netlify.app",
+];
+
+if (process.env.CLIENT_URL) {
+    const envOrigins = process.env.CLIENT_URL.split(",");
+    envOrigins.forEach((orig) => {
+        const clean = orig.trim().replace(/\/+$/, "");
+        if (clean && !allowedOrigins.includes(clean)) {
+            allowedOrigins.push(clean);
+        }
+    });
+}
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+
+        const cleanOrigin = origin.trim().replace(/\/+$/, "");
+        if (allowedOrigins.includes(cleanOrigin) || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        console.warn(`[CORS Rejection] Origin: ${origin} not in whitelist`);
+        return callback(null, false);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
+/* ===========================
+   2. Security & Utility Middleware
 =========================== */
 
 app.use(
@@ -46,43 +88,6 @@ app.use(
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use(compression());
 app.use(hpp());
-
-
-/* ===========================
-   Rate Limiter
-=========================== */
-
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-        success: false,
-        message: "Too many requests. Please try again later.",
-    },
-});
-
-/* ===========================
-   Swagger
-=========================== */
-
-app.use(
-    "/api-docs",
-    swaggerUi.serve,
-    swaggerUi.setup(specs)
-);
-
-/* ===========================
-   Global Middleware
-=========================== */
-
-const allowedOrigin = process.env.CLIENT_URL;
-
-app.use(cors({
-    origin: allowedOrigin || false,
-    credentials: Boolean(allowedOrigin),
-}));
 
 app.use(morgan("dev"));
 app.use(express.json());
