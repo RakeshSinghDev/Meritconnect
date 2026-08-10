@@ -26,11 +26,19 @@ const protect = asyncHandler(async (req, res, next) => {
 
     // No token found
     if (!token) {
+        console.warn(`[Protect Auth] Unauthorized access attempt to ${req.method} ${req.originalUrl} - No token present`);
         throw new ApiError(401, "Not authorized");
     }
 
     // Verify JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+        console.warn(`[Protect Auth] Token verification failed for ${req.method} ${req.originalUrl}`);
+        throw new ApiError(401, "Not authorized, token failed");
+    }
+
     // Find user
     const user = await User.findById(decoded.id).select(
         "-password -refreshToken"

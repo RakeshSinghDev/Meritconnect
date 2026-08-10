@@ -45,7 +45,8 @@ export const AuthProvider = ({
     useEffect(() => {
         const loadUser = async () => {
             const hasAuthSession =
-                document.cookie.includes("accessToken") ||
+                Boolean(localStorage.getItem("accessToken")) ||
+                Boolean(localStorage.getItem("refreshToken")) ||
                 localStorage.getItem("isLoggedIn") === "true";
 
             if (!hasAuthSession) {
@@ -56,13 +57,18 @@ export const AuthProvider = ({
 
             try {
                 const response = await me();
-                setUser(response.data);
+                const fetchedUser = response.data?.user || response.data;
+                setUser(fetchedUser);
 
                 if (!socket.connected) {
                     socket.connect();
                 }
-                socket.emit("join", response.data._id);
+                if (fetchedUser?._id) {
+                    socket.emit("join", fetchedUser._id);
+                }
             } catch {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
                 localStorage.removeItem("isLoggedIn");
                 setUser(null);
             } finally {
@@ -82,14 +88,32 @@ export const AuthProvider = ({
             password,
         });
 
-        const loggedInUser = response.data.user;
+        const resData = response.data || response;
+        const loggedInUser = resData.user || response.user || resData;
+        const accessToken =
+            resData.accessToken ||
+            response.accessToken ||
+            (response.data && response.data.accessToken);
+        const refreshToken =
+            resData.refreshToken ||
+            response.refreshToken ||
+            (response.data && response.data.refreshToken);
+
+        if (accessToken) {
+            localStorage.setItem("accessToken", accessToken);
+        }
+        if (refreshToken) {
+            localStorage.setItem("refreshToken", refreshToken);
+        }
 
         localStorage.setItem("isLoggedIn", "true");
         setUser(loggedInUser);
         if (!socket.connected) {
             socket.connect();
         }
-        socket.emit("join", loggedInUser._id);
+        if (loggedInUser?._id) {
+            socket.emit("join", loggedInUser._id);
+        }
 
         return loggedInUser;
     };
@@ -100,6 +124,8 @@ export const AuthProvider = ({
         } catch {
             // Ignore logout API failure
         } finally {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
             localStorage.removeItem("isLoggedIn");
             socket.disconnect();
             setUser(null);

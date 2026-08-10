@@ -17,7 +17,19 @@ const api = axios.create({
     },
 });
 
-let refreshPromise: Promise<void> | null = null;
+// Attach Authorization Bearer token header if present in localStorage
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("accessToken");
+        if (token && config.headers) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+let refreshPromise: Promise<string | null> | null = null;
 
 api.interceptors.response.use(
     (response) => response,
@@ -28,7 +40,6 @@ api.interceptors.response.use(
             | undefined;
 
         const isAuthEndpoint =
-            originalRequest?.url?.includes("/auth/me") ||
             originalRequest?.url?.includes("/auth/login") ||
             originalRequest?.url?.includes("/auth/register") ||
             originalRequest?.url?.includes("/auth/refresh-token");
@@ -41,10 +52,34 @@ api.interceptors.response.use(
         ) {
             originalRequest._retry = true;
             try {
-                refreshPromise ??= api.post("/auth/refresh-token").then(() => undefined);
-                await refreshPromise;
-                return api(originalRequest);
+                refreshPromise ??= (async () => {
+                    const storedRefreshToken = localStorage.getItem("refreshToken");
+                    const res = await api.post("/auth/refresh-token", {
+                        refreshToken: storedRefreshToken,
+                    });
+
+                    const newToken =
+                        res.data?.data?.accessToken ||
+                        res.data?.accessToken ||
+                        "";
+
+                    if (newToken) {
+                        localStorage.setItem("accessToken", newToken);
+                        return newToken;
+                    }
+                    return null;
+                })();
+
+                const newToken = await refreshPromise;
+
+                if (newToken && originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${newToken}`;
+                    return api(originalRequest);
+                }
             } catch (refreshErr) {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                localStorage.removeItem("isLoggedIn");
                 return Promise.reject(refreshErr);
             } finally {
                 refreshPromise = null;
