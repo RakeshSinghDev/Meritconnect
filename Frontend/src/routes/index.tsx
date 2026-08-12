@@ -36,6 +36,7 @@ import { AIInterviewLive } from "../pages/candidate/AIInterviewLive";
 import { AIInterviewReportPage } from "../pages/candidate/AIInterviewReport";
 import RecruiterAIInterviewsPage from "../pages/recruiter/AIInterviews";
 import { AIInterviewsPage } from "../pages/candidate/AIInterviews";
+import AIJobFinder from "../pages/candidate/AIJobFinder";
 
 // Error Boundary Element
 const RouteErrorBoundary = () => {
@@ -171,6 +172,10 @@ export const router = createBrowserRouter([
                     {
                         path: "/candidate/applications",
                         element: <MyApplications />,
+                    },
+                    {
+                        path: "/candidate/job-finder",
+                        element: <AIJobFinder />,
                     },
                     {
                         path: "/candidate/profile",

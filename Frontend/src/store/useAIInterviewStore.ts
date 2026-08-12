@@ -22,6 +22,7 @@ interface AIInterviewState {
     session: AIInterviewSession | null;
     status: "idle" | "loading" | "waiting" | "active" | "coding" | "completed" | "error";
     error: string | null;
+    isSubmitting: boolean;
 
     // Timeline & Questions
     currentQuestionIndex: number;
@@ -63,6 +64,7 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
     session: null,
     status: "idle",
     error: null,
+    isSubmitting: false,
 
     currentQuestionIndex: 0,
     questions: [],
@@ -129,8 +131,24 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
     },
 
     sendAnswer: async (answerText: string) => {
-        const { session, currentQuestionIndex } = get();
-        if (!session) return;
+        if (get().isSubmitting) return;
+        set({ isSubmitting: true });
+
+        const { session, currentQuestionIndex, questions } = get();
+        if (!session) {
+            set({ isSubmitting: false });
+            return;
+        }
+
+        const currentQ = questions[currentQuestionIndex];
+        const url = `/ai-interviews/${session._id}/answer`;
+
+        console.log("[INTERVIEW] ABOUT TO CALL ANSWER API", {
+            url,
+            answer: answerText,
+            questionId: (currentQ as any)?._id || currentQ?.index,
+            questionNumber: currentQuestionIndex + 1,
+        });
 
         set({
             avatarState: "thinking",
@@ -143,6 +161,7 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
 
         try {
             const res = await submitAnswer(session._id, currentQuestionIndex, answerText);
+            console.log("[INTERVIEW] ANSWER API RESPONSE", res);
 
             if (res.interviewStatus === "Completed" || res.nextStep === "wrapup") {
                 set({
@@ -150,8 +169,13 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
                     currentSpeechText: res.interviewerSpeech,
                     isInterviewerSpeaking: true,
                     status: "completed",
+                    transcript: [
+                        ...get().transcript,
+                        { role: 'interviewer', content: res.interviewerSpeech, timestamp: new Date().toISOString() },
+                    ],
                 });
                 await get().finishInterview();
+                set({ isSubmitting: false });
                 return;
             }
 
@@ -162,34 +186,59 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
                     avatarState: "speaking",
                     currentSpeechText: res.interviewerSpeech,
                     isInterviewerSpeaking: true,
+                    transcript: [
+                        ...get().transcript,
+                        { role: 'interviewer', content: res.interviewerSpeech, timestamp: new Date().toISOString() },
+                    ],
                 });
+                set({ isSubmitting: false });
                 return;
             }
 
             if (res.nextQuestion) {
+                console.log("[INTERVIEW] NEXT QUESTION RECEIVED", res.nextQuestion);
+                const updatedQuestions = [...get().questions, res.nextQuestion];
+                const nextIndex = updatedQuestions.length - 1;
+                console.log("[INTERVIEW] QUESTION NUMBER UPDATED:", nextIndex + 1);
+
                 set({
-                    questions: [...get().questions, res.nextQuestion],
-                    currentQuestionIndex: get().questions.length,
+                    questions: updatedQuestions,
+                    currentQuestionIndex: nextIndex,
                     avatarState: "speaking",
                     currentSpeechText: res.interviewerSpeech,
                     isInterviewerSpeaking: true,
+                    transcript: [
+                        ...get().transcript,
+                        { role: 'interviewer', content: res.interviewerSpeech, timestamp: new Date().toISOString() },
+                    ],
                 });
             } else {
                 set({
                     avatarState: "speaking",
                     currentSpeechText: res.interviewerSpeech,
                     isInterviewerSpeaking: true,
+                    transcript: [
+                        ...get().transcript,
+                        { role: 'interviewer', content: res.interviewerSpeech, timestamp: new Date().toISOString() },
+                    ],
                 });
             }
         } catch (err: any) {
-            console.error("Answer submission error:", err);
+            console.error("[INTERVIEW] ANSWER API ERROR", err);
             set({ avatarState: "idle" });
         }
+        set({ isSubmitting: false });
     },
 
     sendCode: async (code: string, language: string) => {
+        if (get().isSubmitting) return;
+        set({ isSubmitting: true });
+
         const { session } = get();
-        if (!session) return;
+        if (!session) {
+            set({ isSubmitting: false });
+            return;
+        }
 
         set({ avatarState: "thinking" });
         try {
@@ -199,10 +248,15 @@ export const useAIInterviewStore = create<AIInterviewState>((set, get) => ({
                 avatarState: "speaking",
                 currentSpeechText: res.interviewerSpeech,
                 isInterviewerSpeaking: true,
+                transcript: [
+                    ...get().transcript,
+                    { role: 'interviewer', content: res.interviewerSpeech, timestamp: new Date().toISOString() },
+                ],
             });
         } catch (err) {
             set({ avatarState: "idle" });
         }
+        set({ isSubmitting: false });
     },
 
     updateLiveMetrics: (confidence: number, eyeContact: number, speed?: number) => {

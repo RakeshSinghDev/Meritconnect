@@ -22,15 +22,18 @@ const callGemini = async (prompt, retries = 1, fallback = null) => {
             });
 
             let text = response.text.trim();
-            text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+            // Strip markdown code fences
+            text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-            const start = text.indexOf("{");
-            const end = text.lastIndexOf("}");
-            if (start === -1 || end === -1) {
-                throw new Error("AI response did not contain valid JSON");
+            // Try parsing directly first
+            try {
+                return JSON.parse(text);
+            } catch (_) {
+                // Fallback: extract the outermost JSON object
+                const match = text.match(/\{[\s\S]*\}/);
+                if (!match) throw new Error('AI response did not contain valid JSON');
+                return JSON.parse(match[0]);
             }
-
-            return JSON.parse(text.substring(start, end + 1));
         } catch (err) {
             lastError = err;
             console.error(
@@ -152,7 +155,7 @@ const formatTranscript = (transcript, maxEntries = 14) => {
     return recent
         .map(
             (t) =>
-                `[${t.role === "interviewer" ? "ALEX (Interviewer)" : "CANDIDATE"}]: ${t.content}`
+                `[${t.role === "interviewer" ? "AI INTERVIEWER" : "CANDIDATE"}]: ${t.content}`
         )
         .join("\n\n");
 };
@@ -208,7 +211,7 @@ const initializeInterviewAgent = async (aiInterviewId) => {
     const jobTitle = interview.job?.title || "Software Engineer";
 
     const prompt = `
-You are Alex Vance, a Senior Engineering Manager at ${company}.
+You are MeritConnect AI, a professional interview system built by ${company}.
 You are beginning a live ${config.duration}-minute video interview with ${candidateName} for the role of "${jobTitle}".
 You must behave exactly like a real human interviewer — warm, professional, and conversational.
 
@@ -366,10 +369,15 @@ const processAnswerAndNextStep = async (
         interview.questions.find((q) => q.index === questionIndex) ||
         interview.questions[interview.questions.length - 1];
 
+    console.log("[INTERVIEW] Current question object:", currentQuestion);
+
     if (currentQuestion) {
         currentQuestion.candidateAnswer = answer;
         currentQuestion.status = "Answered";
     }
+
+    console.log("[INTERVIEW] Updating conversation memory");
+    console.log("[INTERVIEW] Generating next question");
 
     // ── Performance analysis ──
     const performance = analyzePerformance(interview.questions);
@@ -378,6 +386,7 @@ const processAnswerAndNextStep = async (
         interview.config.difficulty
     );
 
+    const answeredCount = interview.questions.filter(q => q.status === 'Answered').length;
     const questionCount = interview.questions.length;
     const maxQuestions = interview.config.questionCount || 6;
     const codingEnabled = interview.config.codingEnabled;
@@ -397,7 +406,7 @@ const processAnswerAndNextStep = async (
         interview.context.candidateProfile?.interviewPlan || {};
 
     const prompt = `
-You are Alex Vance, Senior Engineering Manager at ${interview.job?.company || "the company"}.
+You are MeritConnect AI, a professional interview system for ${interview.job?.company || 'the company'}.
 You are mid-interview with a candidate for "${interview.job?.title || "Engineer"}".
 Respond like a real human interviewer — natural, adaptive, evaluative.
 
@@ -525,7 +534,7 @@ Include "nextQuestion" ONLY when nextStep is NOT "wrapup".
     let interviewerSpeech = "";
 
     // ── WRAP-UP ──
-    if (json.nextStep === "wrapup" || questionCount >= maxQuestions + 1) {
+    if (json.nextStep === "wrapup" || answeredCount >= maxQuestions) {
         interviewerSpeech =
             json.interviewerReaction || "Thank you for your time today.";
         interviewerSpeech +=
@@ -646,7 +655,7 @@ const evaluateCodeSubmission = async (
     if (!challenge) throw new ApiError(404, "Coding challenge not found");
 
     const prompt = `
-You are a Lead Software Architect evaluating candidate code during a live interview.
+You are MeritConnect AI, evaluating candidate code during a live interview.
 
 ═══════════════════════════════════════════
 PROBLEM
@@ -769,7 +778,7 @@ const generateFinalReport = async (aiInterviewId) => {
     const performance = analyzePerformance(interview.questions);
 
     const prompt = `
-You are the Lead Hiring Committee Chair at ${interview.job?.company || "the company"}.
+You are MeritConnect AI, generating a comprehensive evaluation report for ${interview.job?.company || 'the company'}.
 Review the complete interview record and produce a rigorous evaluation report.
 Base your scores ONLY on the evidence below — do not infer or assume.
 

@@ -6,6 +6,8 @@ import {
     Bot,
     Settings,
     LogOut,
+    Sparkles,
+    Landmark
 } from "lucide-react";
 import SidebarItem from "../dashboard/Sidebar/SidebarItem";
 import { useAuth } from "../../store/AuthContext";
@@ -21,6 +23,16 @@ const menuItems = [
         label: "Jobs",
         icon: BriefcaseBusiness,
         path: "/candidate/jobs",
+    },
+    {
+        label: "AI Job Finder",
+        icon: Sparkles,
+        path: "/candidate/job-finder",
+    },
+    {
+        label: "Govt Opportunities",
+        icon: Landmark,
+        path: "/candidate/government-opportunities",
     },
     {
         label: "My Applications",

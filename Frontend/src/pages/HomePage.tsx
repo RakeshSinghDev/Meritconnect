@@ -6,6 +6,7 @@ import Workflow from "../components/sections/Workflow";
 import DashboardPreview from "../components/sections/DashboardPreview";
 import Technology from "../components/sections/Technology";
 import Security from "../components/sections/Security";
+import GovernmentCareers from "../components/sections/GovernmentCareers";
 import FAQ from "../components/sections/FAQ";
 import CTA from "../components/sections/CTA";
 import Footer from "../components/sections/Footer";
@@ -22,6 +23,7 @@ export default function HomePage() {
             <DashboardPreview />
             <Technology />
             <Security />
+            <GovernmentCareers />
             <FAQ />
             <CTA />
             <Footer />

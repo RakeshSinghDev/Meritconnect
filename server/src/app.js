@@ -20,12 +20,13 @@ const recruiterRoutes = require("./routes/recruiter.routes");
 const candidateRoutes = require("./routes/candidate.routes");
 const interviewRoutes = require("./routes/interview.routes");
 const adminRoutes = require("./routes/admin.routes");
-const aiInterviewRoutes = require("./routes/aiInterview.routes");
 const aiInterviewAgentRoutes = require("./routes/aiInterviewAgent.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const activityRoutes = require("./routes/activity.routes");
+const jobFinderRoutes = require("./routes/jobFinder.routes");
 const applicationRoutes = require("./routes/application.routes");
 const userRoutes = require("./routes/user.routes");
+const governmentOpportunityRoutes = require("./routes/governmentOpportunity.routes");
 
 // Middleware
 const errorHandler = require("./middleware/errorHandler");
@@ -119,11 +120,12 @@ app.use("/api/v1/recruiter", recruiterRoutes);
 app.use("/api/v1/candidate", candidateRoutes);
 app.use("/api/v1/interviews", interviewRoutes);
 app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/ai", aiInterviewRoutes);
 app.use("/api/v1/ai-interviews", aiInterviewAgentRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/applications", activityRoutes);
+app.use("/api/v1/job-finder", jobFinderRoutes);
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/government-opportunities", governmentOpportunityRoutes);
 
 /* ===========================
    404 Route Handler

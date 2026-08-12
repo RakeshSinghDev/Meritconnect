@@ -104,8 +104,16 @@ exports.startInterview = asyncHandler(async (req, res) => {
  * Access: Candidate
  */
 exports.submitAnswer = asyncHandler(async (req, res) => {
+    console.log("[INTERVIEW] ANSWER ENDPOINT HIT");
+    console.log("[INTERVIEW] BODY:", req.body);
+    console.log("[INTERVIEW] PARAMS:", req.params);
+
+    const interviewId = req.params.id;
+    console.log("[INTERVIEW] Interview ID:", interviewId);
+
     // Ownership check — getAIInterviewById verifies candidate/recruiter access
-    const session = await sessionService.getAIInterviewById(req.params.id, req.user._id);
+    const session = await sessionService.getAIInterviewById(interviewId, req.user._id);
+    console.log("[INTERVIEW] Session found:", !!session);
 
     if (session.status !== "InProgress") {
         throw new ApiError(400, "Cannot submit answers — interview is not in progress");
@@ -115,29 +123,32 @@ exports.submitAnswer = asyncHandler(async (req, res) => {
     if (!answer || typeof answer !== "string" || !answer.trim()) {
         throw new ApiError(400, "Candidate answer is required");
     }
-    const result = await agentService.processAnswerAndNextStep(req.params.id, {
+
+    console.log("[INTERVIEW] Evaluating candidate answer");
+    const result = await agentService.processAnswerAndNextStep(interviewId, {
         questionIndex: questionIndex ?? 0,
         answer,
     });
 
     // Real-time: broadcast interviewer speech and status changes
-    emitToInterview(req.params.id, "interviewer:speaking", {
+    emitToInterview(interviewId, "interviewer:speaking", {
         isSpeaking: true,
         text: result.interviewerSpeech,
     });
 
     if (result.interviewStatus === "Completed") {
-        emitToInterview(req.params.id, "interview:completed", {
-            interviewId: req.params.id,
+        emitToInterview(interviewId, "interview:completed", {
+            interviewId,
         });
     }
 
     if (result.nextStep === "coding" && result.codingChallenge) {
-        emitToInterview(req.params.id, "interview:codingStarted", {
+        emitToInterview(interviewId, "interview:codingStarted", {
             challenge: result.codingChallenge,
         });
     }
 
+    console.log("[INTERVIEW] Returning interview response");
     return res.status(200).json(new ApiResponse(200, "Answer processed successfully", result));
 });
 

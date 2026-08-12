@@ -6,7 +6,7 @@ import { useSpeechSynthesis } from "../../hooks/useSpeechSynthesis";
 import { useInterviewTimer, formatDuration } from "../../hooks/useInterviewTimer";
 import { getAIInterviewSocket } from "../../lib/socket";
 
-import { InterviewerAvatar } from "../../components/ai-interview/InterviewerAvatar";
+import { AIInterviewerPanel } from "../../components/ai-interview/AIInterviewerPanel";
 import { CandidateVideo } from "../../components/ai-interview/CandidateVideo";
 import { QuestionTimeline } from "../../components/ai-interview/QuestionTimeline";
 import { CodingEnvironment } from "../../components/ai-interview/CodingEnvironment";
@@ -20,10 +20,9 @@ import {
     PhoneOff,
     Sparkles,
     Activity,
-    MessageSquare,
-    ChevronDown,
     Bot,
     User,
+    Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -54,38 +53,50 @@ export const AIInterviewLive: React.FC = () => {
         setAvatarState,
         setSpeechText,
         tickTimer,
-    } = useAIInterviewStore();
+        isSubmitting,
+    } = useAIInterviewStore() as any;
 
     const [writtenAnswer, setWrittenAnswer] = useState("");
-    const [showTranscriptDrawer, setShowTranscriptDrawer] = useState(false);
     const transcriptEndRef = useRef<HTMLDivElement>(null);
 
-    // Hook to speak interviewer responses aloud via Speech Synthesis
-    const { speak } = useSpeechSynthesis();
+    // TTS Hook with completion callback to transition state from AI_SPEAKING -> LISTENING
+    const { speak, stop: stopTTS } = useSpeechSynthesis(undefined, () => {
+        console.log("[Interview] TTS finished speaking — transitioning state to LISTENING");
+        useAIInterviewStore.setState({ isInterviewerSpeaking: false, avatarState: "listening" });
+    });
 
-    // Hook to capture candidate spoken answers via Web Speech Recognition
+    // Voice Recognition Hook with automatic speech-end detection and debug logging
     const {
         transcript: speechTranscript,
+        interimTranscript,
         isListening,
         startListening,
         stopListening,
         resetTranscript,
-    } = useSpeechRecognition((finalText) => {
-        setWrittenAnswer((prev) => (prev ? prev + " " + finalText : finalText));
+    } = useSpeechRecognition({
+        onFinalTranscript: (text) => {
+            console.log("[INTERVIEW] Speech result:", { transcript: text, isFinal: true });
+            setWrittenAnswer(text);
+        },
+        onSpeechEnd: (finalText) => {
+            console.log("[INTERVIEW] Final transcript:", finalText);
+            console.log("[INTERVIEW] Speech recognition ended");
+            handleSendAnswer(finalText);
+        },
     });
 
-    // Fetch session on mount (supports page refresh & reconnect)
+    // Fetch session on mount
     useEffect(() => {
-        console.log("[STEP 1: Interview Page Mounted]", id);
+        console.log("[INTERVIEW] Page Mounted with session ID:", id);
         if (id) fetchSession(id);
     }, [id]);
 
-    // Auto-start interview agent if session is loaded and interview hasn't initialized yet
+    // Auto-start interview agent ONLY IF interview hasn't initialized yet
     useEffect(() => {
         if (!id || !session) return;
-        console.log("[STEP 2: Evaluating session status]", session.status, "questions:", session.questions?.length);
-        if (session.status === "Waiting" || session.status === "InProgress" || !session.questions || session.questions.length === 0) {
-            console.log("[STEP 2a: Triggering startSession]");
+        console.log("[INTERVIEW] Evaluating session status:", session.status, "questions length:", session.questions?.length);
+        if (session.status === "Waiting" || !session.questions || session.questions.length === 0) {
+            console.log("[INTERVIEW] Initializing opening question via startSession");
             useAIInterviewStore.getState().startSession(id);
         }
     }, [id, session?.status, session?.questions?.length]);
@@ -136,45 +147,75 @@ export const AIInterviewLive: React.FC = () => {
     // Timer tick loop
     useInterviewTimer(status === "active" || status === "coding", tickTimer);
 
-    // Speak interviewer text aloud whenever new interviewer text arrives
+    // Speak interviewer text aloud whenever new text arrives
     useEffect(() => {
         if (currentSpeechText && isInterviewerSpeaking) {
-            console.log("[STEP 10: Triggering TTS Speech Synthesis]", currentSpeechText);
-            speak(currentSpeechText);
+            console.log("[INTERVIEW] Triggering TTS speech for AI text:", currentSpeechText);
+            speak(currentSpeechText, () => {
+                console.log("[INTERVIEW] Per-call TTS finished — switching avatar state to listening");
+                useAIInterviewStore.setState({ isInterviewerSpeaking: false, avatarState: "listening" });
+            });
         }
-    }, [currentSpeechText, isInterviewerSpeaking]);
+    }, [currentSpeechText]);
 
-    // Auto-listen when mic is enabled and interviewer is quiet
+    // Auto-listen control based on State Machine:
     useEffect(() => {
-        if (isMicOn && !isInterviewerSpeaking && (status === "active" || status === "coding")) {
+        if (isMicOn && !isInterviewerSpeaking && !isSubmitting && (status === "active" || status === "coding")) {
+            console.log("[INTERVIEW] Speech recognition started");
             startListening();
         } else {
             stopListening();
         }
-    }, [isMicOn, isInterviewerSpeaking, status]);
+    }, [isMicOn, isInterviewerSpeaking, isSubmitting, status]);
 
-    // Auto-scroll transcript drawer to bottom
+    // Auto-scroll transcript to bottom
     useEffect(() => {
         transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [storeTranscript, showTranscriptDrawer]);
+    }, [storeTranscript, isSubmitting, interimTranscript]);
 
-    // Candidate submits answer (via voice STT or text)
-    const handleSendAnswer = async () => {
-        const finalAns = (writtenAnswer || speechTranscript).trim();
-        if (!finalAns) {
-            toast.error("Please enter or speak your answer before submitting.");
+    // Unified Answer Submission Routine (Voice STT auto-submit or manual Text Send)
+    const handleSendAnswer = async (overrideText?: string) => {
+        console.log("[INTERVIEW] submitAnswer() CALLED");
+
+        const currentQ = questions[currentQuestionIndex];
+        console.log("[INTERVIEW] Current question:", currentQ?.question || currentQ);
+
+        const candidateText = (overrideText || writtenAnswer || speechTranscript || "").trim();
+
+        console.log("[INTERVIEW] Submitting answer:", {
+            questionId: currentQ?._id || currentQ?.index,
+            questionNumber: currentQuestionIndex + 1,
+            answer: candidateText,
+        });
+
+        if (isSubmitting) {
+            console.log("[INTERVIEW] Submission blocked — already submitting");
             return;
         }
 
+        if (!candidateText) {
+            if (overrideText !== undefined) {
+                console.log("[INTERVIEW] Speech-end triggered with empty transcript — skipping submission");
+            } else {
+                toast.error("Please enter or speak your answer before submitting.");
+            }
+            return;
+        }
+
+        // Lock inputs & stop microphone / TTS audio
+        stopListening();
+        stopTTS();
+
+        // Reset inputs & voice buffers
         setWrittenAnswer("");
         resetTranscript();
 
-        // Emit telemetry over Socket.IO
+        // Emit real-time telemetry over Socket.IO
         const socket = getAIInterviewSocket();
         if (socket.connected && id) {
             socket.emit("candidate:speech", {
                 aiInterviewId: id,
-                text: finalAns,
+                text: candidateText,
                 isFinal: true,
             });
             socket.emit("candidate:telemetry", {
@@ -185,7 +226,7 @@ export const AIInterviewLive: React.FC = () => {
             });
         }
 
-        await sendAnswer(finalAns);
+        await sendAnswer(candidateText);
     };
 
     const handleEndInterview = async () => {
@@ -215,7 +256,7 @@ export const AIInterviewLive: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-[#F6F6F7] text-[#111111] overflow-hidden select-none">
-            {/* Top Bar Navigation - Apple HIG Bar */}
+            {/* Top Bar Navigation */}
             <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-[#ECECEC] shadow-xs z-30">
                 <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-xl bg-black flex items-center justify-center font-bold text-sm text-white shadow-xs">
@@ -227,7 +268,7 @@ export const AIInterviewLive: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Status Telemetry & Controls */}
+                {/* Telemetry & Timer */}
                 <div className="flex items-center gap-3 text-xs">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F6F6F7] border border-[#ECECEC] font-mono text-[#111111]">
                         <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -238,15 +279,6 @@ export const AIInterviewLive: React.FC = () => {
                         <Activity className="h-4 w-4 text-emerald-600" />
                         <span>Confidence: <strong className="text-[#111111]">{confidenceScore}%</strong></span>
                     </div>
-
-                    <button
-                        onClick={() => setShowTranscriptDrawer(!showTranscriptDrawer)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition ${showTranscriptDrawer ? "bg-black border-black text-white" : "bg-white border-[#ECECEC] text-[#111111] hover:bg-[#F6F6F7]"
-                            }`}
-                    >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span className="hidden md:inline">Transcript</span>
-                    </button>
 
                     <button
                         onClick={handleEndInterview}
@@ -270,8 +302,8 @@ export const AIInterviewLive: React.FC = () => {
                     />
                 </div>
 
-                {/* Main Interactive Stage (Takes 3/4 Width) */}
-                <div className="lg:col-span-3 flex flex-col h-full space-y-4 overflow-hidden">
+                {/* Main Interactive Stage */}
+                <div className="lg:col-span-3 flex flex-col h-full space-y-4 overflow-hidden relative">
                     {status === "coding" && currentCodingChallenge ? (
                         /* Interactive Coding Environment Mode */
                         <div className="flex-1 overflow-hidden">
@@ -281,33 +313,97 @@ export const AIInterviewLive: React.FC = () => {
                             />
                         </div>
                     ) : (
-                        /* Live Video Stage (Interviewer Avatar + Candidate Feed) */
-                        <div className="grid grid-cols-1 md:grid-cols-3 flex-1 gap-4 overflow-hidden">
-                            {/* AI Interviewer Avatar (Takes 2/3 space) */}
-                            <div className="md:col-span-2 h-full overflow-hidden">
-                                <InterviewerAvatar
-                                    avatarState={avatarState}
+                        /* Live Stage (AI Orb Panel + Conversation Area) */
+                        <div className="flex-1 flex flex-col rounded-[24px] border border-[#ECECEC] bg-white shadow-[0_4px_24px_rgba(0,0,0,0.03)] overflow-hidden relative">
+                            {/* AI Panel (Top 1/2 height) */}
+                            <div className="h-1/2 overflow-hidden border-b border-[#ECECEC]">
+                                <AIInterviewerPanel
+                                    avatarState={isSubmitting ? "thinking" : avatarState}
                                     isSpeaking={isInterviewerSpeaking}
                                     speechText={currentSpeechText}
+                                    currentQuestion={questions[currentQuestionIndex]?.question}
+                                    questionNumber={currentQuestionIndex + 1}
+                                    questionType={questions[currentQuestionIndex]?.type}
+                                    questionDifficulty={questions[currentQuestionIndex]?.difficulty}
                                     className="h-full w-full"
                                 />
                             </div>
 
-                            {/* Candidate Selfie Stream (Takes 1/3 space) */}
-                            <div className="md:col-span-1 h-full overflow-hidden">
-                                <CandidateVideo
-                                    isCameraOn={isCameraOn}
-                                    isMicOn={isMicOn}
-                                    candidateName={session.candidate?.name}
-                                    confidenceScore={confidenceScore}
-                                    className="h-full w-full"
-                                />
+                            {/* Conversation Area (Bottom 1/2 height) */}
+                            <div className="h-1/2 overflow-y-auto p-5 space-y-4 bg-white relative">
+                                {storeTranscript.length === 0 ? (
+                                    <p className="text-[#6E6E73] text-center py-8 text-xs">Transcript exchanges will appear here as you speak.</p>
+                                ) : (
+                                    storeTranscript.map((entry: any, idx: number) => {
+                                        const isInterviewer = entry.role === "interviewer" || entry.role === "agent";
+                                        return (
+                                            <div key={idx} className={`flex items-start gap-2 ${isInterviewer ? "justify-start" : "justify-end"}`}>
+                                                {isInterviewer && (
+                                                    <div className="p-1.5 rounded-xl bg-[#F6F6F7] border border-[#ECECEC] text-[#111111] shrink-0">
+                                                        <Bot className="h-3.5 w-3.5" />
+                                                    </div>
+                                                )}
+                                                <div className={`p-3.5 rounded-2xl max-w-[85%] ${isInterviewer ? "bg-[#F6F6F7] border border-[#ECECEC] text-[#111111]" : "bg-black text-white"}`}>
+                                                    <p className={`text-[10px] font-semibold mb-0.5 ${isInterviewer ? "text-[#6E6E73]" : "text-neutral-300"}`}>
+                                                        {isInterviewer ? "MeritConnect AI" : "You"}
+                                                    </p>
+                                                    <p className="leading-relaxed text-xs">{entry.content}</p>
+                                                </div>
+                                                {!isInterviewer && (
+                                                    <div className="p-1.5 rounded-xl bg-black text-white shrink-0">
+                                                        <User className="h-3.5 w-3.5" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                )}
+
+                                {/* Live Interim Speech Indicator */}
+                                {isListening && interimTranscript && (
+                                    <div className="flex items-start gap-2 justify-end opacity-80">
+                                        <div className="p-3 rounded-2xl bg-neutral-900 text-white max-w-[85%] border border-neutral-700">
+                                            <p className="text-[10px] text-emerald-400 font-semibold mb-0.5 flex items-center gap-1">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" /> Speaking...
+                                            </p>
+                                            <p className="leading-relaxed text-xs italic">{interimTranscript}</p>
+                                        </div>
+                                        <div className="p-1.5 rounded-xl bg-black text-white shrink-0">
+                                            <User className="h-3.5 w-3.5 animate-pulse" />
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Analyzing Response Processing Indicator */}
+                                {isSubmitting && (
+                                    <div className="flex items-start gap-2">
+                                        <div className="p-1.5 rounded-xl bg-[#F6F6F7] border border-[#ECECEC]">
+                                            <Bot className="h-3.5 w-3.5 animate-spin text-amber-500" />
+                                        </div>
+                                        <div className="p-3.5 rounded-2xl bg-[#F6F6F7] border border-[#ECECEC] flex items-center gap-2">
+                                            <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-600" />
+                                            <span className="text-xs text-[#6E6E73] font-medium">Analyzing your response & generating adaptive question...</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div ref={transcriptEndRef} />
                             </div>
                         </div>
                     )}
 
-                    {/* Candidate Answer Input & Control Dock - Apple HIG Dock */}
-                    <div className="p-3 bg-white border border-[#ECECEC] rounded-[24px] flex items-center gap-3 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+                    {/* Candidate Video PiP Overlay */}
+                    <div className="absolute bottom-24 right-6 z-20 w-40 h-28 rounded-2xl overflow-hidden shadow-lg border-2 border-white/80">
+                        <CandidateVideo
+                            isCameraOn={isCameraOn}
+                            isMicOn={isMicOn}
+                            candidateName={session.candidate?.name}
+                            confidenceScore={confidenceScore}
+                            className="h-full w-full"
+                        />
+                    </div>
+
+                    {/* Dock Controls & Input */}
+                    <div className="p-3 bg-white border border-[#ECECEC] rounded-[24px] flex items-center gap-3 shadow-[0_4px_24px_rgba(0,0,0,0.03)] z-30">
                         <button
                             type="button"
                             onClick={toggleMic}
@@ -330,76 +426,46 @@ export const AIInterviewLive: React.FC = () => {
                             {isCameraOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
                         </button>
 
-                        {/* Spoken / Typed Answer Input Box */}
+                        {/* Input Box */}
                         <div className="flex-1 relative">
                             <input
                                 type="text"
-                                value={writtenAnswer}
+                                value={writtenAnswer || interimTranscript}
                                 onChange={(e) => setWrittenAnswer(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleSendAnswer()}
-                                placeholder={isListening ? "Listening to your speech... (speak naturally or type response)" : "Type your answer or speak into microphone..."}
-                                className="w-full bg-[#F6F6F7] border border-[#ECECEC] rounded-2xl px-4 py-3 text-xs text-[#111111] placeholder-[#6E6E73] outline-none focus:border-black transition"
+                                onKeyDown={(e) => e.key === "Enter" && !isSubmitting && handleSendAnswer()}
+                                placeholder={
+                                    isSubmitting
+                                        ? "Analyzing your response..."
+                                        : isListening
+                                        ? "Listening attentively... (speak naturally or type response)"
+                                        : "Type your answer or unmute microphone to speak..."
+                                }
+                                disabled={isSubmitting}
+                                className={`w-full bg-[#F6F6F7] border border-[#ECECEC] rounded-2xl px-4 py-3 text-xs text-[#111111] placeholder-[#6E6E73] outline-none focus:border-black transition ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                             />
-                            {isListening && (
+                            {isListening && !isSubmitting && (
                                 <span className="absolute right-3.5 top-3.5 h-2 w-2 rounded-full bg-emerald-500 animate-ping" title="Voice Recognition Active" />
                             )}
                         </div>
 
                         <button
                             type="button"
-                            onClick={handleSendAnswer}
-                            className="px-5 py-3 rounded-2xl bg-black hover:bg-neutral-800 text-white font-semibold text-xs flex items-center gap-2 shadow-xs transition"
+                            onClick={() => handleSendAnswer()}
+                            disabled={isSubmitting}
+                            className={`px-5 py-3 rounded-2xl font-semibold text-xs flex items-center gap-2 shadow-xs transition ${
+                                isSubmitting
+                                    ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                                    : 'bg-black hover:bg-neutral-800 text-white'
+                            }`}
                         >
                             <span>Send</span> <Send className="h-3.5 w-3.5" />
                         </button>
                     </div>
                 </div>
-
-                {/* TRANSCRIPT OVERLAY DRAWER - Apple HIG Drawer */}
-                {showTranscriptDrawer && (
-                    <div className="absolute right-4 top-4 bottom-20 w-full max-w-md rounded-[28px] bg-white border border-[#ECECEC] shadow-2xl p-5 flex flex-col z-40 backdrop-blur-xl animate-in slide-in-from-right duration-200">
-                        <div className="flex items-center justify-between pb-3 border-b border-[#ECECEC]">
-                            <h3 className="font-semibold text-xs text-[#111111] flex items-center gap-2 tracking-tight">
-                                <MessageSquare className="h-4 w-4 text-[#111111]" /> Live Conversation Transcript
-                            </h3>
-                            <button onClick={() => setShowTranscriptDrawer(false)} className="text-[#6E6E73] hover:text-[#111111]">
-                                <ChevronDown className="h-4 w-4" />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto space-y-3 py-3 pr-1 text-xs">
-                            {storeTranscript.length === 0 ? (
-                                <p className="text-[#6E6E73] text-center py-8">Transcript exchanges will appear here as you speak.</p>
-                            ) : (
-                                storeTranscript.map((entry, idx) => {
-                                    const isInterviewer = entry.role === "interviewer";
-                                    return (
-                                        <div key={idx} className={`flex items-start gap-2 ${isInterviewer ? "justify-start" : "justify-end"}`}>
-                                            {isInterviewer && (
-                                                <div className="p-1.5 rounded-xl bg-[#F6F6F7] border border-[#ECECEC] text-[#111111] shrink-0">
-                                                    <Bot className="h-3.5 w-3.5" />
-                                                </div>
-                                            )}
-                                            <div className={`p-3.5 rounded-2xl max-w-[85%] ${isInterviewer ? "bg-[#F6F6F7] border border-[#ECECEC] text-[#111111]" : "bg-black text-white"}`}>
-                                                <p className={`text-[10px] font-semibold mb-0.5 ${isInterviewer ? "text-[#6E6E73]" : "text-neutral-300"}`}>{isInterviewer ? "Alex (AI Interviewer)" : "You"}</p>
-                                                <p className="leading-relaxed">{entry.content}</p>
-                                            </div>
-                                            {!isInterviewer && (
-                                                <div className="p-1.5 rounded-xl bg-black text-white shrink-0">
-                                                    <User className="h-3.5 w-3.5" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
-                            )}
-                            <div ref={transcriptEndRef} />
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
 };
 
 export default AIInterviewLive;
+

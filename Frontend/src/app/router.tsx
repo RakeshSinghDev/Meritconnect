@@ -36,6 +36,8 @@ import { AIInterviewWaiting } from "../pages/candidate/AIInterviewWaiting";
 import { AIInterviewLive } from "../pages/candidate/AIInterviewLive";
 import { AIInterviewReportPage } from "../pages/candidate/AIInterviewReport";
 import { AIInterviewsPage } from "../pages/candidate/AIInterviews";
+import AIJobFinder from "../pages/candidate/AIJobFinder";
+import GovernmentOpportunities from "../pages/candidate/GovernmentOpportunities";
 
 // Error Boundary Component
 const RouteErrorBoundary = () => {
@@ -175,6 +177,14 @@ export const router = createBrowserRouter([
                     {
                         path: "/candidate/applications",
                         element: <MyApplications />,
+                    },
+                    {
+                        path: "/candidate/job-finder",
+                        element: <AIJobFinder />,
+                    },
+                    {
+                        path: "/candidate/government-opportunities",
+                        element: <GovernmentOpportunities />,
                     },
                     {
                         path: "/candidate/profile",

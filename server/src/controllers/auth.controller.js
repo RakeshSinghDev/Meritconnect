@@ -2,12 +2,15 @@ const authService = require("../services/auth.service");
 const asyncHandler = require("../middleware/asyncHandler");
 const ApiResponse = require("../utils/ApiResponse");
 
-const getCookieOptions = () => ({
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-});
+const getCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production" || process.env.RENDER === "true";
+    return {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        path: "/",
+    };
+};
 
 exports.register = asyncHandler(async (req, res) => {
     const result = await authService.registerUser(req.body);
@@ -99,8 +102,32 @@ exports.resetPassword = asyncHandler(async (req, res) => {
 });
 
 exports.refresh = asyncHandler(async (req, res) => {
-    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-    const accessToken = await authService.refreshAccessToken(refreshToken);
+    const candidates = [];
+    if (req.body?.refreshToken) candidates.push(req.body.refreshToken);
+    if (req.cookies?.refreshToken && !candidates.includes(req.cookies.refreshToken)) {
+        candidates.push(req.cookies.refreshToken);
+    }
+
+    if (candidates.length === 0) {
+        throw new ApiError(401, "Refresh token is required");
+    }
+
+    let accessToken = null;
+    let lastError = null;
+
+    for (const token of candidates) {
+        try {
+            accessToken = await authService.refreshAccessToken(token);
+            if (accessToken) break;
+        } catch (err) {
+            lastError = err;
+        }
+    }
+
+    if (!accessToken) {
+        throw lastError || new ApiError(401, "Invalid or expired refresh token");
+    }
+
     const options = getCookieOptions();
 
     res

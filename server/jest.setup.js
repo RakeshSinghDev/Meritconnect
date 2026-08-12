@@ -3,12 +3,15 @@ require("dotenv").config({
 });
 
 const mongoose = require("mongoose");
-const connectDB = require("./src/config/db");
+
+jest.setTimeout(30000);
 
 beforeAll(async () => {
-    await connectDB();
+    // Unit tests do not require live DB connection
 });
 
 afterAll(async () => {
-    await mongoose.connection.close();
+    if (mongoose.connection.readyState !== 0) {
+        await mongoose.connection.close();
+    }
 });

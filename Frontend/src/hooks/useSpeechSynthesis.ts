@@ -24,8 +24,13 @@ export const useSpeechSynthesis = (
         }
     }, []);
 
-    const speak = (text: string) => {
-        if (!synthRef.current) return;
+    const speak = (text: string, perCallOnEnd?: () => void) => {
+        if (!synthRef.current) {
+            // Fallback if Speech Synthesis is unsupported: call onEnd immediately
+            if (perCallOnEnd) perCallOnEnd();
+            if (onEnd) onEnd();
+            return;
+        }
 
         synthRef.current.cancel(); // Stop any active speech
 
@@ -46,6 +51,13 @@ export const useSpeechSynthesis = (
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => {
             setIsSpeaking(false);
+            if (perCallOnEnd) perCallOnEnd();
+            if (onEnd) onEnd();
+        };
+
+        utterance.onerror = () => {
+            setIsSpeaking(false);
+            if (perCallOnEnd) perCallOnEnd();
             if (onEnd) onEnd();
         };
 
