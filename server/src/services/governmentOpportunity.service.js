@@ -1,5 +1,5 @@
 const GovernmentOpportunity = require("../models/GovernmentOpportunity");
-const ApiError = require("../utils/apiError");
+const ApiError = require("../utils/ApiError");
 const eligibilityService = require("./governmentJobs/eligibility.service");
 
 class GovernmentOpportunityService {
